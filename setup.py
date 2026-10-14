@@ -5,7 +5,7 @@ distributing Python projects. It is used by setuptools
 of your project, such as its metadata, dependencies, and more
 '''
 
-from setuptools import find_packages,setup
+from setuptools import find_packags, setup
 from typing import List
 
 def get_requirements()->List[str]:
