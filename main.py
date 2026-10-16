@@ -1,17 +1,18 @@
-
 from networksecurity.entity.config_entity import (
     TrainingPipelineConfig,
     DataIngestionConfig,
     DataValidationConfig,
+    DataTransformationConfig,
 )
 
 from networksecurity.components.data_ingestion import DataIngestion
 from networksecurity.components.data_validation import DataValidation
+from networksecurity.components.data_transformation import DataTransformation
 
 
 def main():
     try:
-        # Step 1: Initialize the training pipeline configuration
+        # Step 1: Initialize training pipeline configuration
         training_pipeline_config = TrainingPipelineConfig()
 
         # Step 2: Configure data ingestion
@@ -50,6 +51,25 @@ def main():
 
         print("\nData validation completed successfully!")
         print(data_validation_artifact)
+
+        # Step 8: Configure data transformation
+        data_transformation_config = DataTransformationConfig(
+            training_pipeline_config=training_pipeline_config
+        )
+
+        # Step 9: Initialize data transformation
+        data_transformation = DataTransformation(
+            data_transformation_config=data_transformation_config,
+            data_validation_artifact=data_validation_artifact,
+        )
+
+        # Step 10: Execute data transformation
+        data_transformation_artifact = (
+            data_transformation.initiate_data_transformation()
+        )
+
+        print("\nData transformation completed successfully!")
+        print(data_transformation_artifact)
 
     except Exception as e:
         print(f"Error occurred: {e}")
