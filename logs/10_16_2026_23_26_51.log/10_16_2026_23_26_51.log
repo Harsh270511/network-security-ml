@@ -1,5 +1,0 @@
-[ 2026-10-16 23:26:51,952 ] 49 root - WARNING - MONGO_DB_URL is not set - reading the local CSV Network_Data\phishingData.csv instead
-[ 2026-10-16 23:26:52,033 ] 58 root - INFO - Dropped 5206 duplicate rows (5849 remain)
-[ 2026-10-16 23:26:52,431 ] 84 root - INFO - Train/test split done: 4679 / 1170 rows
-[ 2026-10-16 23:26:52,838 ] 55 root - INFO - Saved object to Artifacts\10_16_2026_23_26_51\data_transformation\transformed_object\preprocessing.pkl
-[ 2026-10-16 23:26:52,839 ] 71 root - INFO - Data transformation completed
