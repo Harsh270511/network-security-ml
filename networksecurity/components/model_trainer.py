@@ -4,7 +4,7 @@ import sys
 
 import mlflow
 import mlflow.sklearn
-import numpy as np
+from dotenv import load_dotenv
 
 from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging
@@ -36,6 +36,18 @@ from sklearn.ensemble import (
 )
 
 
+# Load credentials and configuration from the project-root .env file.
+load_dotenv()
+
+DAGSHUB_REPO_OWNER = "hm0093173"
+DAGSHUB_REPO_NAME = "network-security-ml"
+
+DAGSHUB_MLFLOW_URI = (
+    f"https://dagshub.com/{DAGSHUB_REPO_OWNER}/"
+    f"{DAGSHUB_REPO_NAME}.mlflow"
+)
+
+
 class ModelTrainer:
     def __init__(
         self,
@@ -49,16 +61,35 @@ class ModelTrainer:
         except Exception as e:
             raise NetworkSecurityException(e, sys) from e
 
-    def track_mlflow(self, model, metrics, run_name: str):
-        """Log a trained model and its evaluation metrics to MLflow."""
+    def configure_mlflow(self):
+        """Configure MLflow to use this project's DagsHub repository."""
         try:
-            tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+            username = os.getenv("MLFLOW_TRACKING_USERNAME")
+            token = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
-            if tracking_uri:
-                mlflow.set_tracking_uri(tracking_uri)
+            if not username or not token:
+                raise EnvironmentError(
+                    "DagsHub credentials are missing. Set "
+                    "MLFLOW_TRACKING_USERNAME and "
+                    "MLFLOW_TRACKING_PASSWORD in your .env file."
+                )
+
+            # Use your own DagsHub repository, not Krish Naik's.
+            mlflow.set_tracking_uri(DAGSHUB_MLFLOW_URI)
+            mlflow.set_registry_uri(DAGSHUB_MLFLOW_URI)
 
             mlflow.set_experiment("NetworkSecurity_Experiment")
 
+            logging.info(
+                f"MLflow tracking URI configured: {DAGSHUB_MLFLOW_URI}"
+            )
+
+        except Exception as e:
+            raise NetworkSecurityException(e, sys) from e
+
+    def track_mlflow(self, model, metrics, run_name: str):
+        """Log a fitted model and its metrics to DagsHub."""
+        try:
             with mlflow.start_run(run_name=run_name):
                 mlflow.log_metric(
                     "f1_score",
@@ -73,8 +104,10 @@ class ModelTrainer:
                     float(metrics.recall_score),
                 )
 
-                # Explicitly trust the sklearn Tree type used by
-                # decision trees and tree-based ensemble estimators.
+                mlflow.log_param("model_type", type(model).__name__)
+
+                # This is appropriate for a model trained in this project.
+                # It allows skops to serialize sklearn decision-tree objects.
                 mlflow.sklearn.log_model(
                     sk_model=model,
                     artifact_path="model",
@@ -83,18 +116,18 @@ class ModelTrainer:
                     ],
                 )
 
-            logging.info(
-                f"MLflow run completed successfully: {run_name}"
-            )
+            logging.info(f"Logged MLflow run: {run_name}")
 
         except Exception as e:
             logging.exception(
-                f"MLflow logging failed for run '{run_name}'"
+                f"Failed to log MLflow run: {run_name}"
             )
             raise NetworkSecurityException(e, sys) from e
 
     def train_model(self, X_train, y_train, X_test, y_test):
         try:
+            self.configure_mlflow()
+
             models = {
                 "Random Forest": RandomForestClassifier(
                     random_state=42,
@@ -143,8 +176,10 @@ class ModelTrainer:
                 },
             }
 
-            logging.info("Starting model evaluation and tuning.")
+            logging.info("Starting model evaluation.")
 
+            # Match the evaluate_models signature in utils.py:
+            # it returns a dictionary with cv_f1 and estimator per model.
             model_report = evaluate_models(
                 X_train=X_train,
                 y_train=y_train,
@@ -157,7 +192,6 @@ class ModelTrainer:
                     "Model evaluation returned no results."
                 )
 
-            # Select the estimator with the highest cross-validation F1.
             best_model_name = max(
                 model_report,
                 key=lambda name: model_report[name]["cv_f1"],
@@ -167,21 +201,19 @@ class ModelTrainer:
             best_model = model_report[best_model_name]["estimator"]
 
             logging.info(
-                f"Best model: {best_model_name}, "
-                f"CV F1 score: {best_model_score:.4f}"
+                f"Selected model: {best_model_name}; "
+                f"cross-validation F1: {best_model_score:.4f}"
             )
 
-            # Evaluate on the training dataset.
+            # Evaluate the fitted best estimator on training data.
             y_train_pred = best_model.predict(X_train)
-
             train_metrics = get_classification_score(
                 y_true=y_train,
                 y_pred=y_train_pred,
             )
 
-            # Evaluate on the held-out test dataset.
+            # Evaluate on the held-out test data.
             y_test_pred = best_model.predict(X_test)
-
             test_metrics = get_classification_score(
                 y_true=y_test,
                 y_pred=y_test_pred,
@@ -190,7 +222,7 @@ class ModelTrainer:
             logging.info(f"Training metrics: {train_metrics}")
             logging.info(f"Testing metrics: {test_metrics}")
 
-            # Log separate MLflow runs for training and test metrics.
+            # Log separate training and test runs to DagsHub.
             self.track_mlflow(
                 model=best_model,
                 metrics=train_metrics,
@@ -203,7 +235,7 @@ class ModelTrainer:
                 run_name=f"{best_model_name}_test",
             )
 
-            # Load the preprocessing object created during transformation.
+            # Load the fitted preprocessing pipeline.
             preprocessor = load_object(
                 file_path=(
                     self.data_transformation_artifact
@@ -211,7 +243,6 @@ class ModelTrainer:
                 )
             )
 
-            # Combine preprocessing and the trained estimator.
             network_model = NetworkModel(
                 preprocessor=preprocessor,
                 model=best_model,
@@ -222,16 +253,21 @@ class ModelTrainer:
             )
 
             model_directory = os.path.dirname(model_path)
-
             if model_directory:
-                os.makedirs(
-                    model_directory,
-                    exist_ok=True,
-                )
+                os.makedirs(model_directory, exist_ok=True)
 
-            # Save the complete prediction pipeline.
+            # Save the complete preprocessing + model instance.
             save_object(
                 file_path=model_path,
+                obj=network_model,
+            )
+
+            # Keep a convenient copy at final_model/model.pkl.
+            save_object(
+                file_path=os.path.join(
+                    "final_model",
+                    "model.pkl",
+                ),
                 obj=network_model,
             )
 
@@ -242,7 +278,7 @@ class ModelTrainer:
             )
 
             logging.info(
-                f"Model trainer completed successfully: {artifact}"
+                f"Model trainer completed: {artifact}"
             )
 
             return artifact
@@ -257,7 +293,6 @@ class ModelTrainer:
                 self.data_transformation_artifact
                 .transformed_train_file_path
             )
-
             test_file_path = (
                 self.data_transformation_artifact
                 .transformed_test_file_path
@@ -268,16 +303,14 @@ class ModelTrainer:
 
             if train_array.ndim != 2 or test_array.ndim != 2:
                 raise ValueError(
-                    "Transformed train and test arrays must be 2D."
+                    "Train and test arrays must both be two-dimensional."
                 )
 
             if train_array.shape[1] < 2 or test_array.shape[1] < 2:
                 raise ValueError(
-                    "Transformed arrays must contain features "
-                    "and a target column."
+                    "Each array must contain features and a target column."
                 )
 
-            # Last column is the target; all preceding columns are features.
             X_train = train_array[:, :-1]
             y_train = train_array[:, -1]
 
@@ -285,12 +318,8 @@ class ModelTrainer:
             y_test = test_array[:, -1]
 
             logging.info(
-                f"Training data shape: {X_train.shape}; "
-                f"target shape: {y_train.shape}"
-            )
-            logging.info(
-                f"Testing data shape: {X_test.shape}; "
-                f"target shape: {y_test.shape}"
+                f"Train features: {X_train.shape}; "
+                f"test features: {X_test.shape}"
             )
 
             return self.train_model(
@@ -301,7 +330,5 @@ class ModelTrainer:
             )
 
         except Exception as e:
-            logging.exception(
-                "Could not initiate model training."
-            )
+            logging.exception("Could not initiate model training.")
             raise NetworkSecurityException(e, sys) from e
