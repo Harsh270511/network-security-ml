@@ -1,0 +1,31 @@
+[ 2026-10-17 10:01:46,169 ] 20 root - INFO - Initiate the data ingestion
+[ 2026-10-17 10:01:46,169 ] 49 root - WARNING - MONGO_DB_URL is not set - reading the local CSV Network_Data\phishingData.csv instead
+[ 2026-10-17 10:01:46,203 ] 58 root - INFO - Dropped 5206 duplicate rows (5849 remain)
+[ 2026-10-17 10:01:46,303 ] 84 root - INFO - Train/test split done: 4679 / 1170 rows
+[ 2026-10-17 10:01:46,303 ] 22 root - INFO - Data Initiation Completed
+[ 2026-10-17 10:01:46,306 ] 26 root - INFO - Initiate the data Validation
+[ 2026-10-17 10:01:46,532 ] 28 root - INFO - data Validation Completed
+[ 2026-10-17 10:01:46,532 ] 31 root - INFO - data Transformation started
+[ 2026-10-17 10:01:46,679 ] 55 root - INFO - Saved object to Artifacts\10_17_2026_10_01_46\data_transformation\transformed_object\preprocessing.pkl
+[ 2026-10-17 10:01:46,679 ] 71 root - INFO - Data transformation completed
+[ 2026-10-17 10:01:46,679 ] 35 root - INFO - data Transformation completed
+[ 2026-10-17 10:01:46,680 ] 37 root - INFO - Model Training sstared
+[ 2026-10-17 10:01:46,735 ] 97 root - INFO - Tuning Random Forest ...
+[ 2026-10-17 10:01:52,657 ] 128 root - INFO - Random Forest: cross-validated F1 = 0.9453
+[ 2026-10-17 10:01:52,658 ] 97 root - INFO - Tuning Decision Tree ...
+[ 2026-10-17 10:01:52,935 ] 128 root - INFO - Decision Tree: cross-validated F1 = 0.9289
+[ 2026-10-17 10:01:52,935 ] 97 root - INFO - Tuning Gradient Boosting ...
+[ 2026-10-17 10:01:54,736 ] 128 root - INFO - Gradient Boosting: cross-validated F1 = 0.9383
+[ 2026-10-17 10:01:54,736 ] 97 root - INFO - Tuning Logistic Regression ...
+[ 2026-10-17 10:01:54,839 ] 128 root - INFO - Logistic Regression: cross-validated F1 = 0.9220
+[ 2026-10-17 10:01:54,840 ] 97 root - INFO - Tuning AdaBoost ...
+[ 2026-10-17 10:01:56,151 ] 128 root - INFO - AdaBoost: cross-validated F1 = 0.9358
+[ 2026-10-17 10:01:56,151 ] 99 root - INFO - Best model: Random Forest (cv F1 = 0.9453)
+[ 2026-10-17 10:01:56,180 ] 103 root - INFO - Train metrics: ClassificationMetricArtifact(f1_score=0.9911138665013433, precision_score=0.9892739273927392, recall_score=0.9929606625258799)
+[ 2026-10-17 10:01:56,180 ] 104 root - INFO - Test metrics:  ClassificationMetricArtifact(f1_score=0.9419568822553898, precision_score=0.9435215946843853, recall_score=0.9403973509933775)
+[ 2026-10-17 10:01:56,180 ] 43 root - INFO - MLFLOW_TRACKING_URI not set - skipping MLflow tracking
+[ 2026-10-17 10:01:56,198 ] 55 root - INFO - Saved object to Artifacts\10_17_2026_10_01_46\model_trainer\trained_model\model.pkl
+[ 2026-10-17 10:01:56,202 ] 55 root - INFO - Saved object to final_model\model.pkl
+[ 2026-10-17 10:01:56,204 ] 55 root - INFO - Saved object to final_model\preprocessor.pkl
+[ 2026-10-17 10:01:56,204 ] 130 root - INFO - Model trainer artifact: ModelTrainerArtifact(trained_model_file_path='Artifacts\\10_17_2026_10_01_46\\model_trainer\\trained_model\\model.pkl', train_metric_artifact=ClassificationMetricArtifact(f1_score=0.9911138665013433, precision_score=0.9892739273927392, recall_score=0.9929606625258799), test_metric_artifact=ClassificationMetricArtifact(f1_score=0.9419568822553898, precision_score=0.9435215946843853, recall_score=0.9403973509933775))
+[ 2026-10-17 10:01:56,205 ] 42 root - INFO - Model Training artifact created

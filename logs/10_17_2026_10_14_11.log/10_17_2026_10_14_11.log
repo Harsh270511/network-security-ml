@@ -1,0 +1,38 @@
+[ 2026-10-17 10:14:21,709 ] 24 root - INFO - Initializing training pipeline configuration
+[ 2026-10-17 10:14:21,710 ] 28 root - INFO - Starting data ingestion
+[ 2026-10-17 10:14:22,003 ] 93 root - ERROR - Training pipeline failed
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 41, in export_collection_as_dataframe
+    df=df.drop(columns=["_id"],axis=1)
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\pandas\core\frame.py", line 6302, in drop
+    return super().drop(
+           ~~~~~~~~~~~~^
+        labels=labels,
+        ^^^^^^^^^^^^^^
+    ...<5 lines>...
+        errors=errors,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\pandas\core\generic.py", line 4619, in drop
+    raise ValueError("Cannot specify both 'axis' and 'index'/'columns'")
+ValueError: Cannot specify both 'axis' and 'index'/'columns'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 93, in initiate_data_ingestion
+    dataframe=self.export_collection_as_dataframe()
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 46, in export_collection_as_dataframe
+    raise NetworkSecurityException
+TypeError: NetworkSecurityException.__init__() missing 2 required positional arguments: 'error_message' and 'error_details'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\main.py", line 33, in main
+    data_ingestion.initiate_data_ingestion()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 101, in initiate_data_ingestion
+    raise NetworkSecurityException
+TypeError: NetworkSecurityException.__init__() missing 2 required positional arguments: 'error_message' and 'error_details'

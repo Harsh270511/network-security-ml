@@ -1,79 +1,97 @@
+
+import sys
+
+from networksecurity.components.data_ingestion import DataIngestion
+from networksecurity.components.data_validation import DataValidation
+from networksecurity.components.data_transformation import DataTransformation
+from networksecurity.components.model_trainer import ModelTrainer
+
 from networksecurity.entity.config_entity import (
     TrainingPipelineConfig,
     DataIngestionConfig,
     DataValidationConfig,
     DataTransformationConfig,
+    ModelTrainerConfig,
 )
 
-from networksecurity.components.data_ingestion import DataIngestion
-from networksecurity.components.data_validation import DataValidation
-from networksecurity.components.data_transformation import DataTransformation
+from networksecurity.exception.exception import NetworkSecurityException
+from networksecurity.logging.logger import logging
 
 
 def main():
     try:
-        # Step 1: Initialize training pipeline configuration
+        # Step 1: Initialize pipeline configuration
+        logging.info("Initializing training pipeline configuration")
         training_pipeline_config = TrainingPipelineConfig()
 
-        # Step 2: Configure data ingestion
-        data_ingestion_config = DataIngestionConfig(
-            training_pipeline_config=training_pipeline_config
-        )
+        # Step 2: Data Ingestion
+        logging.info("Starting data ingestion")
+        data_ingestion_config = DataIngestionConfig(training_pipeline_config)
+        data_ingestion = DataIngestion(data_ingestion_config)
 
-        # Step 3: Initialize data ingestion
-        data_ingestion = DataIngestion(
-            data_ingestion_config=data_ingestion_config
-        )
-
-        # Step 4: Execute data ingestion
         data_ingestion_artifact = (
             data_ingestion.initiate_data_ingestion()
         )
-
-        print("\nData ingestion completed successfully!")
+        logging.info("Data ingestion completed successfully")
         print(data_ingestion_artifact)
 
-        # Step 5: Configure data validation
+        # Step 3: Data Validation
+        logging.info("Starting data validation")
         data_validation_config = DataValidationConfig(
-            training_pipeline_config=training_pipeline_config
+            training_pipeline_config
         )
-
-        # Step 6: Initialize data validation
         data_validation = DataValidation(
-            data_validation_config=data_validation_config,
-            data_ingestion_artifact=data_ingestion_artifact,
+            data_ingestion_artifact,
+            data_validation_config,
         )
 
-        # Step 7: Execute data validation
         data_validation_artifact = (
             data_validation.initiate_data_validation()
         )
-
-        print("\nData validation completed successfully!")
+        logging.info("Data validation completed")
         print(data_validation_artifact)
 
-        # Step 8: Configure data transformation
+        # Stop if validation failed
+        if not data_validation_artifact.validation_status:
+            raise ValueError(
+                "Data validation failed. Check the drift report and schema."
+            )
+
+        # Step 4: Data Transformation
+        logging.info("Starting data transformation")
         data_transformation_config = DataTransformationConfig(
-            training_pipeline_config=training_pipeline_config
+            training_pipeline_config
         )
-
-        # Step 9: Initialize data transformation
         data_transformation = DataTransformation(
-            data_transformation_config=data_transformation_config,
-            data_validation_artifact=data_validation_artifact,
+            data_validation_artifact,
+            data_transformation_config,
         )
 
-        # Step 10: Execute data transformation
         data_transformation_artifact = (
             data_transformation.initiate_data_transformation()
         )
-
-        print("\nData transformation completed successfully!")
+        logging.info("Data transformation completed")
         print(data_transformation_artifact)
 
+        # Step 5: Model Training
+        logging.info("Starting model training")
+        model_trainer_config = ModelTrainerConfig(
+            training_pipeline_config
+        )
+        model_trainer = ModelTrainer(
+            model_trainer_config=model_trainer_config,
+            data_transformation_artifact=data_transformation_artifact,
+        )
+
+        model_trainer_artifact = (
+            model_trainer.initiate_model_trainer()
+        )
+        logging.info("Model training completed successfully")
+        print(model_trainer_artifact)
+
     except Exception as e:
-        print(f"Error occurred: {e}")
-        raise
+        logging.exception("Training pipeline failed")
+        raise NetworkSecurityException(e, sys) from e
 
 
 if __name__ == "__main__":

@@ -67,31 +67,94 @@ def load_object(file_path: str) -> object:
         raise NetworkSecurityException(e, sys) from e
 
 
-def evaluate_models(X_train, y_train, models: dict, params: dict,
-                    cv: int = 3, n_iter: int = 8, random_state: int = 42) -> dict:
-    """
-    Tune every model with cross-validation on the TRAINING data only
-    (the test set is never used to choose a model) and return
 
-        {model_name: {"cv_f1": float, "estimator": fitted_best_estimator}}
+from sklearn.model_selection import (
+    RandomizedSearchCV,
+    StratifiedKFold,
+    cross_val_score,
+)
+
+
+def evaluate_models(
+    X_train,
+    y_train,
+    models: dict,
+    params: dict,
+    cv: int = 3,
+    n_iter: int = 8,
+    random_state: int = 42,
+) -> dict:
+    """
+    Tune classification models using training data only.
+
+    Returns:
+        {
+            model_name: {
+                "cv_f1": float,
+                "estimator": fitted_best_estimator
+            }
+        }
     """
     try:
         report = {}
+
+        cv_strategy = StratifiedKFold(
+            n_splits=cv,
+            shuffle=True,
+            random_state=random_state,
+        )
+
         for name, model in models.items():
-            grid = params.get(name) or {}
-            logging.info(f"Tuning {name} ...")
-            if grid:
+            model_params = params.get(name) or {}
+
+            logging.info(f"Tuning {name}...")
+
+            if model_params:
                 search = RandomizedSearchCV(
-                    model, grid, n_iter=n_iter, cv=cv, scoring="f1",
-                    random_state=random_state, n_jobs=-1,
+                    estimator=model,
+                    param_distributions=model_params,
+                    n_iter=n_iter,
+                    cv=cv_strategy,
+                    scoring="f1",
+                    random_state=random_state,
+                    n_jobs=-1,
+                    error_score="raise",
                 )
+
                 search.fit(X_train, y_train)
-                best_estimator, cv_f1 = search.best_estimator_, float(search.best_score_)
+
+                best_estimator = search.best_estimator_
+                cv_f1 = float(search.best_score_)
+
+                logging.info(
+                    f"{name} best parameters: {search.best_params_}"
+                )
+
             else:
-                cv_f1 = float(np.mean(cross_val_score(model, X_train, y_train, cv=cv, scoring="f1")))
+                scores = cross_val_score(
+                    model,
+                    X_train,
+                    y_train,
+                    cv=cv_strategy,
+                    scoring="f1",
+                    n_jobs=-1,
+                )
+
+                cv_f1 = float(np.mean(scores))
+
+                # Fit a fresh estimator on the full training data.
                 best_estimator = model.fit(X_train, y_train)
-            logging.info(f"{name}: cross-validated F1 = {cv_f1:.4f}")
-            report[name] = {"cv_f1": cv_f1, "estimator": best_estimator}
+
+            report[name] = {
+                "cv_f1": cv_f1,
+                "estimator": best_estimator,
+            }
+
+            logging.info(
+                f"{name}: CV F1 = {cv_f1:.4f}"
+            )
+
         return report
+
     except Exception as e:
         raise NetworkSecurityException(e, sys) from e

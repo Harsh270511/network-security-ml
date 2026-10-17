@@ -1,0 +1,161 @@
+[ 2026-10-17 12:17:36,118 ] 24 root - INFO - Initializing training pipeline configuration
+[ 2026-10-17 12:17:36,118 ] 28 root - INFO - Starting data ingestion
+[ 2026-10-17 12:17:42,419 ] 66 root - INFO - Retrieved 22110 records from HarshMaurya.NetworkData
+[ 2026-10-17 12:17:42,584 ] 103 root - INFO - Feature store saved at Artifacts\10_17_2026_12_17_36\data_ingestion\feature_store\phishingData.csv
+[ 2026-10-17 12:17:42,589 ] 122 root - INFO - Performed train-test split.
+[ 2026-10-17 12:17:42,644 ] 135 root - INFO - Training data saved at Artifacts\10_17_2026_12_17_36\data_ingestion\ingested\train.csv
+[ 2026-10-17 12:17:42,645 ] 136 root - INFO - Testing data saved at Artifacts\10_17_2026_12_17_36\data_ingestion\ingested\test.csv
+[ 2026-10-17 12:17:42,645 ] 154 root - INFO - Data ingestion completed successfully.
+[ 2026-10-17 12:17:42,646 ] 35 root - INFO - Data ingestion completed successfully
+[ 2026-10-17 12:17:42,646 ] 39 root - INFO - Starting data validation
+[ 2026-10-17 12:17:42,770 ] 185 root - INFO - Schema validation completed successfully.
+[ 2026-10-17 12:17:42,836 ] 147 root - INFO - Dataset drift report saved: Artifacts\10_17_2026_12_17_36\data_validation\drift_report\report.yaml
+[ 2026-10-17 12:17:42,914 ] 219 root - INFO - Data validation completed: DataValidationArtifact(validation_status=True, valid_train_file_path='Artifacts\\10_17_2026_12_17_36\\data_validation\\validated\\train.csv', valid_test_file_path='Artifacts\\10_17_2026_12_17_36\\data_validation\\validated\\test.csv', invalid_train_file_path=None, invalid_test_file_path=None, drift_report_file_path='Artifacts\\10_17_2026_12_17_36\\data_validation\\drift_report\\report.yaml')
+[ 2026-10-17 12:17:42,914 ] 51 root - INFO - Data validation completed
+[ 2026-10-17 12:17:42,915 ] 61 root - INFO - Starting data transformation
+[ 2026-10-17 12:17:42,915 ] 68 root - INFO - Starting data transformation
+[ 2026-10-17 12:17:43,053 ] 49 root - INFO - Creating data transformation pipeline
+[ 2026-10-17 12:17:43,154 ] 55 root - INFO - Saved object to Artifacts\10_17_2026_12_17_36\data_transformation\transformed_object\preprocessing.pkl
+[ 2026-10-17 12:17:43,154 ] 155 root - INFO - Data transformation artifact: DataTransformationArtifact(transformed_object_file_path='Artifacts\\10_17_2026_12_17_36\\data_transformation\\transformed_object\\preprocessing.pkl', transformed_train_file_path='Artifacts\\10_17_2026_12_17_36\\data_transformation\\transformed\\train.npy', transformed_test_file_path='Artifacts\\10_17_2026_12_17_36\\data_transformation\\transformed\\test.npy')
+[ 2026-10-17 12:17:43,156 ] 73 root - INFO - Data transformation completed
+[ 2026-10-17 12:17:43,156 ] 77 root - INFO - Starting model training
+[ 2026-10-17 12:17:43,186 ] 110 root - INFO - Tuning Random Forest...
+[ 2026-10-17 12:17:49,506 ] 129 root - INFO - Random Forest best parameters: {'n_estimators': 32}
+[ 2026-10-17 12:17:49,506 ] 153 root - INFO - Random Forest: CV F1 = 0.9818
+[ 2026-10-17 12:17:49,506 ] 110 root - INFO - Tuning Decision Tree...
+[ 2026-10-17 12:17:49,807 ] 129 root - INFO - Decision Tree best parameters: {'criterion': 'entropy'}
+[ 2026-10-17 12:17:49,807 ] 153 root - INFO - Decision Tree: CV F1 = 0.9790
+[ 2026-10-17 12:17:49,807 ] 110 root - INFO - Tuning Gradient Boosting...
+[ 2026-10-17 12:17:52,497 ] 129 root - INFO - Gradient Boosting best parameters: {'subsample': 0.9, 'n_estimators': 64, 'learning_rate': 0.05}
+[ 2026-10-17 12:17:52,497 ] 153 root - INFO - Gradient Boosting: CV F1 = 0.9333
+[ 2026-10-17 12:17:52,497 ] 110 root - INFO - Tuning Logistic Regression...
+[ 2026-10-17 12:17:53,009 ] 129 root - INFO - Logistic Regression best parameters: {'C': 1.0}
+[ 2026-10-17 12:17:53,009 ] 153 root - INFO - Logistic Regression: CV F1 = 0.9363
+[ 2026-10-17 12:17:53,009 ] 110 root - INFO - Tuning AdaBoost...
+[ 2026-10-17 12:17:55,288 ] 129 root - INFO - AdaBoost best parameters: {'n_estimators': 64, 'learning_rate': 1.0}
+[ 2026-10-17 12:17:55,288 ] 153 root - INFO - AdaBoost: CV F1 = 0.9396
+[ 2026-10-17 12:17:55,288 ] 110 root - INFO - Tuning KNeighbors...
+[ 2026-10-17 12:17:56,526 ] 129 root - INFO - KNeighbors best parameters: {'n_neighbors': 3}
+[ 2026-10-17 12:17:56,526 ] 153 root - INFO - KNeighbors: CV F1 = 0.9657
+[ 2026-10-17 12:17:56,526 ] 151 root - INFO - Best model: Random Forest, CV F1 score: 0.9818
+[ 2026-10-17 12:17:56,612 ] 171 root - INFO - Training metrics: ClassificationMetricArtifact(f1_score=0.9907904058293695, precision_score=0.9882899252977994, recall_score=0.9933035714285714)
+[ 2026-10-17 12:17:56,612 ] 172 root - INFO - Testing metrics: ClassificationMetricArtifact(f1_score=0.9858012170385395, precision_score=0.9830097087378641, recall_score=0.9886086248982913)
+[ 2026-10-17 12:17:58,558 ] 93 root - ERROR - Training pipeline failed
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\sklearn\__init__.py", line 709, in _save_model
+    skops.io.load(output_path, trusted=skops_trusted_types)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\skops\io\_persist.py", line 152, in load
+    audit_tree(tree, trusted=trusted)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\skops\io\_audit.py", line 63, in audit_tree
+    raise UntrustedTypesFoundException(unsafe)
+skops.io.exceptions.UntrustedTypesFoundException: Untrusted types found in the file: ['sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 73, in track_mlflow
+    mlflow.sklearn.log_model(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+    sk_model=model,
+    ^^^^^^^^^^^^^^^
+    artifact_path="model",
+    ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\sklearn\__init__.py", line 497, in log_model
+    return Model.log(
+           ~~~~~~~~~^
+        artifact_path=artifact_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<21 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\telemetry\track.py", line 30, in wrapper
+    result = func(*args, **kwargs)
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\models\model.py", line 1228, in log
+    flavor.save_model(path=local_path, mlflow_model=mlflow_model, **kwargs)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\sklearn\__init__.py", line 315, in save_model
+    _save_model(
+    ~~~~~~~~~~~^
+        sk_model=sk_model,
+        ^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        skops_trusted_types=skops_trusted_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\.venv\Lib\site-packages\mlflow\sklearn\__init__.py", line 712, in _save_model
+    raise MlflowException(
+    ...<5 lines>...
+    )
+mlflow.exceptions.MlflowException: The saved sklearn model references untrusted types. If you are sure loading these types is safe, set the 'skops_trusted_types' parameter when calling 'log_model' or 'save_model' to the list of trusted types. Root error: Untrusted types found in the file: ['sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 175, in train_model
+    self.track_mlflow(
+    ~~~~~~~~~~~~~~~~~^
+        best_model,
+        ^^^^^^^^^^^
+        train_metrics,
+        ^^^^^^^^^^^^^^
+        run_name=f"{best_model_name}_train",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 82, in track_mlflow
+    raise NetworkSecurityException(e, sys) from e
+networksecurity.exception.exception.NetworkSecurityException: Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [73] error message [The saved sklearn model references untrusted types. If you are sure loading these types is safe, set the 'skops_trusted_types' parameter when calling 'log_model' or 'save_model' to the list of trusted types. Root error: Untrusted types found in the file: ['sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.]
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 246, in initiate_model_trainer
+    return self.train_model(
+           ~~~~~~~~~~~~~~~~^
+        X_train,
+        ^^^^^^^^
+    ...<2 lines>...
+        y_test,
+        ^^^^^^^
+    )
+    ^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 225, in train_model
+    raise NetworkSecurityException(e, sys) from e
+networksecurity.exception.exception.NetworkSecurityException: Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [175] error message [Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [73] error message [The saved sklearn model references untrusted types. If you are sure loading these types is safe, set the 'skops_trusted_types' parameter when calling 'log_model' or 'save_model' to the list of trusted types. Root error: Untrusted types found in the file: ['sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.]]
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\main.py", line 87, in main
+    model_trainer.initiate_model_trainer()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py", line 254, in initiate_model_trainer
+    raise NetworkSecurityException(e, sys) from e
+networksecurity.exception.exception.NetworkSecurityException: Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [246] error message [Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [175] error message [Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\model_trainer.py] line number [73] error message [The saved sklearn model references untrusted types. If you are sure loading these types is safe, set the 'skops_trusted_types' parameter when calling 'log_model' or 'save_model' to the list of trusted types. Root error: Untrusted types found in the file: ['sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.]]]

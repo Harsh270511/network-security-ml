@@ -1,99 +1,159 @@
+
 import os
 import sys
 
-import certifi
 import numpy as np
 import pandas as pd
 import pymongo
 from dotenv import load_dotenv
 from sklearn.model_selection import train_test_split
 
-from networksecurity.constant.training_pipeline import MONGO_URL_ENV_VAR, TARGET_COLUMN
-from networksecurity.entity.artifact_entity import DataIngestionArtifact
-from networksecurity.entity.config_entity import DataIngestionConfig
 from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging
+from networksecurity.entity.config_entity import DataIngestionConfig
+from networksecurity.entity.artifact_entity import DataIngestionArtifact
 
-load_dotenv()
+from pathlib import Path
+import os
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = PROJECT_ROOT / ".env"
+
+load_dotenv(dotenv_path=ENV_FILE, override=False)
+
+MONGO_DB_URL = os.getenv("MONGO_DB_URL")
+
+print("Project root:", PROJECT_ROOT)
+print(".env exists:", ENV_FILE.is_file())
+print("MONGO_DB_URL loaded:", bool(MONGO_DB_URL))
 
 
 class DataIngestion:
     def __init__(self, data_ingestion_config: DataIngestionConfig):
-        self.data_ingestion_config = data_ingestion_config
+        try:
+            self.data_ingestion_config = data_ingestion_config
+
+            if not MONGO_DB_URL:
+                raise ValueError(
+                    "MONGO_DB_URL is missing. Check your .env file."
+                )
+
+        except Exception as e:
+            raise NetworkSecurityException(e, sys) from e
 
     def export_collection_as_dataframe(self) -> pd.DataFrame:
-        """
-        Read the data from MongoDB (when MONGO_DB_URL is set in .env).
-        Otherwise fall back to the local CSV so the project still runs offline.
-        """
+        """Read data from MongoDB and return it as a DataFrame."""
         try:
-            mongo_url = os.getenv(MONGO_URL_ENV_VAR, "").strip()
-            if mongo_url:
-                logging.info("Reading data from MongoDB")
-                client = pymongo.MongoClient(
-                    mongo_url, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=10000
-                )
-                try:
-                    collection = client[self.data_ingestion_config.database_name][
-                        self.data_ingestion_config.collection_name
-                    ]
-                    df = pd.DataFrame(list(collection.find()))
-                finally:
-                    client.close()
-                if df.empty:
-                    raise ValueError(
-                        "MongoDB collection is empty. Run `python scripts/push_data.py` first."
-                    )
-                df = df.drop(columns=["_id"], errors="ignore")
-            else:
-                logging.warning(
-                    f"{MONGO_URL_ENV_VAR} is not set - reading the local CSV "
-                    f"{self.data_ingestion_config.local_csv_path} instead"
-                )
-                df = pd.read_csv(self.data_ingestion_config.local_csv_path)
+            database_name = self.data_ingestion_config.database_name
+            collection_name = self.data_ingestion_config.collection_name
 
-            df = df.replace({"na": np.nan})
-            before = len(df)
-            df = df.drop_duplicates().reset_index(drop=True)
-            logging.info(f"Dropped {before - len(df)} duplicate rows ({len(df)} remain)")
+            self.mongo_client = pymongo.MongoClient(
+                MONGO_DB_URL,
+                serverSelectionTimeoutMS=10000,
+            )
+
+            # Verify MongoDB connectivity before querying.
+            self.mongo_client.admin.command("ping")
+
+            collection = self.mongo_client[database_name][collection_name]
+            df = pd.DataFrame(list(collection.find()))
+
+            # Remove MongoDB's generated ID column if present.
+            df = df.drop(columns=["_id"], errors="ignore")
+
+            df.replace({"na": np.nan}, inplace=True)
+
+            logging.info(
+                f"Retrieved {len(df)} records from "
+                f"{database_name}.{collection_name}"
+            )
+
+            if df.empty:
+                raise ValueError(
+                    f"No records found in {database_name}.{collection_name}"
+                )
+
             return df
+
         except Exception as e:
             raise NetworkSecurityException(e, sys) from e
 
-    def export_data_into_feature_store(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        finally:
+            if hasattr(self, "mongo_client"):
+                self.mongo_client.close()
+
+    def export_data_into_feature_store(
+        self, dataframe: pd.DataFrame
+    ) -> pd.DataFrame:
         try:
-            path = self.data_ingestion_config.feature_store_file_path
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            dataframe.to_csv(path, index=False, header=True)
+            feature_store_file_path = (
+                self.data_ingestion_config.feature_store_file_path
+            )
+
+            dir_path = os.path.dirname(feature_store_file_path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+
+            dataframe.to_csv(
+                feature_store_file_path,
+                index=False,
+                header=True,
+            )
+
+            logging.info(
+                f"Feature store saved at {feature_store_file_path}"
+            )
+
             return dataframe
+
         except Exception as e:
             raise NetworkSecurityException(e, sys) from e
 
-    def split_data_as_train_test(self, dataframe: pd.DataFrame) -> None:
+    def split_data_as_train_test(
+        self, dataframe: pd.DataFrame
+    ) -> None:
         try:
-            stratify = dataframe[TARGET_COLUMN] if TARGET_COLUMN in dataframe.columns else None
             train_set, test_set = train_test_split(
                 dataframe,
                 test_size=self.data_ingestion_config.train_test_split_ratio,
                 random_state=42,
-                stratify=stratify,
             )
-            os.makedirs(os.path.dirname(self.data_ingestion_config.training_file_path), exist_ok=True)
-            train_set.to_csv(self.data_ingestion_config.training_file_path, index=False, header=True)
-            test_set.to_csv(self.data_ingestion_config.testing_file_path, index=False, header=True)
-            logging.info(f"Train/test split done: {len(train_set)} / {len(test_set)} rows")
+
+            logging.info("Performed train-test split.")
+
+            train_path = self.data_ingestion_config.training_file_path
+            test_path = self.data_ingestion_config.testing_file_path
+
+            for file_path in (train_path, test_path):
+                dir_path = os.path.dirname(file_path)
+                if dir_path:
+                    os.makedirs(dir_path, exist_ok=True)
+
+            train_set.to_csv(train_path, index=False, header=True)
+            test_set.to_csv(test_path, index=False, header=True)
+
+            logging.info(f"Training data saved at {train_path}")
+            logging.info(f"Testing data saved at {test_path}")
+
         except Exception as e:
             raise NetworkSecurityException(e, sys) from e
 
     def initiate_data_ingestion(self) -> DataIngestionArtifact:
         try:
             dataframe = self.export_collection_as_dataframe()
-            dataframe = self.export_data_into_feature_store(dataframe)
+
+            self.export_data_into_feature_store(dataframe)
+
             self.split_data_as_train_test(dataframe)
-            return DataIngestionArtifact(
+
+            data_ingestion_artifact = DataIngestionArtifact(
                 trained_file_path=self.data_ingestion_config.training_file_path,
                 test_file_path=self.data_ingestion_config.testing_file_path,
             )
+
+            logging.info("Data ingestion completed successfully.")
+
+            return data_ingestion_artifact
+
         except Exception as e:
             raise NetworkSecurityException(e, sys) from e
- 

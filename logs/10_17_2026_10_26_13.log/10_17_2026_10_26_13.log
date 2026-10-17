@@ -1,0 +1,18 @@
+[ 2026-10-17 10:26:15,691 ] 24 root - INFO - Initializing training pipeline configuration
+[ 2026-10-17 10:26:15,692 ] 28 root - INFO - Starting data ingestion
+[ 2026-10-17 10:26:15,692 ] 93 root - ERROR - Training pipeline failed
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 37, in __init__
+    raise ValueError(
+        "MONGO_DB_URL is missing. Check your .env file."
+    )
+ValueError: MONGO_DB_URL is missing. Check your .env file.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\main.py", line 30, in main
+    data_ingestion = DataIngestion(data_ingestion_config)
+  File "C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py", line 42, in __init__
+    raise NetworkSecurityException(e, sys) from e
+networksecurity.exception.exception.NetworkSecurityException: Error occured in python script name [C:\Users\harsh\OneDrive\Desktop\NetworkSecurity\networksecurity\components\data_ingestion.py] line number [37] error message [MONGO_DB_URL is missing. Check your .env file.]
