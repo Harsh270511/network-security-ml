@@ -24,40 +24,40 @@ from networksecurity.entity.artifact_entity import (
     ModelTrainerArtifact,
 )
 
+from networksecurity.constant.training_pipeline import TRAINING_BUCKET_NAME
+from networksecurity.cloud.s3_syncer import S3Sync
+
 
 class TrainingPipeline:
-
     def __init__(self):
-        # Initialize the main pipeline configuration
         self.training_pipeline_config = TrainingPipelineConfig()
+        self.s3_sync = S3Sync()
 
-    def start_data_ingestion(self) -> DataIngestionArtifact:
+    def start_data_ingestion(self):
         try:
             logging.info("Starting data ingestion")
 
-            self.data_ingestion_config = DataIngestionConfig(
+            data_ingestion_config = DataIngestionConfig(
                 training_pipeline_config=self.training_pipeline_config
             )
 
             data_ingestion = DataIngestion(
-                data_ingestion_config=self.data_ingestion_config
+                data_ingestion_config=data_ingestion_config
             )
 
-            data_ingestion_artifact = data_ingestion.initiate_data_ingestion()
+            artifact = data_ingestion.initiate_data_ingestion()
 
-            logging.info(
-                f"Data ingestion completed: {data_ingestion_artifact}"
-            )
-
-            return data_ingestion_artifact
+            logging.info("Data ingestion completed: %s", artifact)
+            return artifact
 
         except Exception as e:
+            logging.exception("Data ingestion failed")
             raise NetworkSecurityException(e, sys) from e
 
     def start_data_validation(
         self,
         data_ingestion_artifact: DataIngestionArtifact,
-    ) -> DataValidationArtifact:
+    ):
         try:
             logging.info("Starting data validation")
 
@@ -70,23 +70,19 @@ class TrainingPipeline:
                 data_validation_config=data_validation_config,
             )
 
-            data_validation_artifact = (
-                data_validation.initiate_data_validation()
-            )
+            artifact = data_validation.initiate_data_validation()
 
-            logging.info(
-                f"Data validation completed: {data_validation_artifact}"
-            )
-
-            return data_validation_artifact
+            logging.info("Data validation completed: %s", artifact)
+            return artifact
 
         except Exception as e:
+            logging.exception("Data validation failed")
             raise NetworkSecurityException(e, sys) from e
 
     def start_data_transformation(
         self,
         data_validation_artifact: DataValidationArtifact,
-    ) -> DataTransformationArtifact:
+    ):
         try:
             logging.info("Starting data transformation")
 
@@ -99,18 +95,13 @@ class TrainingPipeline:
                 data_transformation_config=data_transformation_config,
             )
 
-            data_transformation_artifact = (
-                data_transformation.initiate_data_transformation()
-            )
+            artifact = data_transformation.initiate_data_transformation()
 
-            logging.info(
-                f"Data transformation completed: "
-                f"{data_transformation_artifact}"
-            )
-
-            return data_transformation_artifact
+            logging.info("Data transformation completed: %s", artifact)
+            return artifact
 
         except Exception as e:
+            logging.exception("Data transformation failed")
             raise NetworkSecurityException(e, sys) from e
 
     def start_model_trainer(
@@ -120,53 +111,89 @@ class TrainingPipeline:
         try:
             logging.info("Starting model training")
 
-            self.model_trainer_config = ModelTrainerConfig(
+            model_trainer_config = ModelTrainerConfig(
                 training_pipeline_config=self.training_pipeline_config
             )
 
             model_trainer = ModelTrainer(
                 data_transformation_artifact=data_transformation_artifact,
-                model_trainer_config=self.model_trainer_config,
+                model_trainer_config=model_trainer_config,
             )
 
-            model_trainer_artifact = (
-                model_trainer.initiate_model_trainer()
-            )
+            artifact = model_trainer.initiate_model_trainer()
 
-            logging.info(
-                f"Model training completed: {model_trainer_artifact}"
-            )
-
-            return model_trainer_artifact
+            logging.info("Model training completed: %s", artifact)
+            return artifact
 
         except Exception as e:
+            logging.exception("Model training failed")
             raise NetworkSecurityException(e, sys) from e
 
-    def run_pipeline(self) -> ModelTrainerArtifact:
+    def sync_artifact_dir_to_s3(self):
         try:
-            logging.info("========== Training pipeline started ==========")
+            bucket_url = (
+                f"s3://{TRAINING_BUCKET_NAME}/artifact/"
+                f"{self.training_pipeline_config.timestamp}"
+            )
 
-            # Step 1: Data ingestion
+            logging.info("Syncing artifacts to %s", bucket_url)
+
+            self.s3_sync.sync_folder_to_s3(
+                folder=self.training_pipeline_config.artifact_dir,
+                aws_bucket_url=bucket_url,
+            )
+
+        except Exception as e:
+            logging.exception("Artifact S3 sync failed")
+            raise NetworkSecurityException(e, sys) from e
+
+    def sync_saved_model_dir_to_s3(self):
+        try:
+            bucket_url = (
+                f"s3://{TRAINING_BUCKET_NAME}/final_model/"
+                f"{self.training_pipeline_config.timestamp}"
+            )
+
+            logging.info("Syncing final model to %s", bucket_url)
+
+            self.s3_sync.sync_folder_to_s3(
+                folder=self.training_pipeline_config.model_dir,
+                aws_bucket_url=bucket_url,
+            )
+
+        except Exception as e:
+            logging.exception("Final model S3 sync failed")
+            raise NetworkSecurityException(e, sys) from e
+
+    def run_pipeline(self):
+        try:
+            logging.info(
+                "Pipeline started. Artifact directory: %s",
+                self.training_pipeline_config.artifact_dir,
+            )
+
             data_ingestion_artifact = self.start_data_ingestion()
 
-            # Step 2: Data validation
             data_validation_artifact = self.start_data_validation(
                 data_ingestion_artifact=data_ingestion_artifact
             )
 
-            # Step 3: Data transformation
             data_transformation_artifact = self.start_data_transformation(
                 data_validation_artifact=data_validation_artifact
             )
 
-            # Step 4: Model training and evaluation
             model_trainer_artifact = self.start_model_trainer(
                 data_transformation_artifact=data_transformation_artifact
             )
 
-            logging.info("========== Training pipeline completed ==========")
+            logging.info("All training stages completed.")
 
+            self.sync_artifact_dir_to_s3()
+            self.sync_saved_model_dir_to_s3()
+
+            logging.info("Training pipeline completed successfully.")
             return model_trainer_artifact
 
         except Exception as e:
+            logging.exception("Training pipeline failed.")
             raise NetworkSecurityException(e, sys) from e
