@@ -120,11 +120,9 @@ Follow these steps to run the project locally.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/NetworkSecurity.git
+git clone (https://github.com/Harsh270511/network-security-ml)
 cd NetworkSecurity
 ```
-
-Replace `YOUR_USERNAME/NetworkSecurity` with your actual GitHub repository URL.
 
 ### 2. Create a Virtual Environment
 
